@@ -1,0 +1,254 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Resource {
+  id           String      @id @default(uuid()) // unique identifier
+  resourceName String      @unique // resourse name must be unique.
+  description  String? // short description about the resourse.
+  createdAt    DateTime    @default(now()) // when did this resourse is created? default value is now
+  updatedAt    DateTime    @updatedAt // when did this resourse is updated? its value is auto rendered
+  privileges   Privilege[] // 1 to many r/ship, under one resourse their are many privilates.
+}
+
+model Role {
+  id          String      @id @default(uuid()) // unique string identification for role
+  roleName    String      @unique // role name, Unique
+  description String? // short description of the role, Optional.
+  createdAt   DateTime    @default(now()) // this will answer, when the role is registed?
+  updatedAt   DateTime    @updatedAt // if the role is updated, updated time will be captured automaticly.
+  privileges  Privilege[] // 1 to many r/ship, under one resourse their are many privilates.
+  user        Users[] // 1-many r/ship, one Role can be assigned for many users.
+}
+
+model Privilege {
+  id         String   @id @default(uuid())
+  view       Boolean? @default(false) // can a user see this resource?
+  add        Boolean? @default(false) // can a user add new resource ?
+  edit       Boolean? @default(false) // can a user edit this resource?
+  delete     Boolean? @default(false) // can a user delete this resource?
+  createdAt  DateTime @default(now()) // this will answer, when the role is registed?
+  updatedAt  DateTime @updatedAt // if the role is updated, updated time will be captured automaticly.
+  resource   Resource @relation(fields: [resourceId], references: [id], onDelete: Cascade, onUpdate: Cascade) // 1-many r/ship, we may create many roles on top of one resource.
+  resourceId String // resource primary key, role forainkey whch is not unique.
+  Role       Role     @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Cascade) // 1-many r/ship, we may create many roles on top of one resource.
+  roleId     String
+}
+
+// annotations are the same with the above so, it may not need more clarifications.
+
+model Team {
+  id          String   @id @default(uuid())
+  teamName    String   @unique
+  description String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        Users[]
+}
+
+model Users {
+  id                      String                    @id @default(uuid())
+  firstName               String
+  lastName                String
+  email                   String                    @unique
+  password                String
+  verificationCode        String?
+  token                   String?
+  position                String
+  phone                   String? // user can update latter, after registration.
+  gender                  String
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @default(now()) // @updatedAt
+  lastLoggedIn            DateTime? // will be updated while login.
+  profileImge             String?                   @unique
+  status                  String                    @default("ACTIVE") // default user status will be "ACTIVE"
+  role                    Role                      @relation(fields: [roleId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  roleId                  String
+  team                    Team                      @relation(fields: [teamId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  teamId                  String
+  courseUser              CourseUsers[]
+  mostSearchedCourses     MostSearchedCourses[]
+  announcements           Announcement[]
+  announcementReadHistory AnnouncementReadHistory[]
+  commentReadHistory      CommentReadHistory[]
+  comments                Comment[]
+
+  @@index([id, email])
+}
+
+model Category {
+  id           String   @id @default(uuid())
+  categoryName String   @unique
+  description  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  course       Course[] //  one to many r/ship, one category will have many courses.
+}
+
+model Course {
+  id              String                @id @default(uuid())
+  title           String                @unique
+  description     String
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+  category        Category              @relation(fields: [categotyId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  categotyId      String // it will reference the category by this id.
+  courseMaterials CourseMaterials[] // one course will have many materials under it.
+  courseUsers     CourseUsers[] //  one course will be used by many users.
+  searchInfos     MostSearchedCourses[] // one to many r/ship, one course may be registered many times in most search courses; b/c of many users.
+  comments        Comment[]
+
+  @@index([id, title])
+}
+
+model CourseUsers {
+  id                         String                        @id @default(uuid())
+  createdAt                  DateTime                      @default(now()) // starting time.
+  updatedAt                  DateTime                      @updatedAt
+  completedTime              DateTime? // Obtional, b/c end at is filled when user finnesh his course.
+  status                     String                        @default("PROGRESS") // status af a course will be PROGRESS, or COMPLETED
+  course                     Course                        @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  courseId                   String
+  user                       Users                         @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId                     String
+  courseMaterials_courseUser CourseMaterials_courseUsers[]
+
+  @@unique([userId, courseId]) // one user can enroll to one course only once.
+  @@index([id])
+}
+
+model CourseMaterials {
+  id                         String                        @id @default(uuid())
+  title                      String                        @unique
+  crhr                       Int // we use it to calculate the users progres.
+  body                       String
+  createdAt                  DateTime                      @default(now())
+  updatedAt                  DateTime                      @updatedAt
+  course                     Course                        @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  courseId                   String
+  files                      File[]
+  courseMaterials_courseUser CourseMaterials_courseUsers[]
+
+  @@index([id])
+}
+
+// model CourseMaterials {
+//   id                         String                        @id @default(uuid())
+//   title                      String
+//   crhr                       Int // we use it to calculate the users progres.
+//   body                       String
+//   createdAt                  DateTime                      @default(now())
+//   updatedAt                  DateTime                      @updatedAt
+//   courseId                   String
+//   files                      File[]
+//   course                     Course                        @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+//   courseMaterials_courseUser CourseMaterials_courseUsers[]
+
+//   @@unique([title, courseId])
+// }
+
+model File {
+  id               String          @id @default(uuid())
+  fieldname        String
+  originalname     String
+  encoding         String
+  mimetype         String
+  destination      String
+  filename         String
+  path             String
+  size             Int
+  tunnel  String?
+  courseMaterial   CourseMaterials @relation(fields: [courseMaterialId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  courseMaterialId String
+
+  @@index([id])
+}
+
+model CourseMaterials_courseUsers {
+  id               String          @id @default(uuid())
+  status           String          @default("PROGRESS") // status af a course will be PROGRESS, or COMPLETED
+  completedTime    DateTime        @updatedAt // completing time will be filled when user changes PROGRESS to COMPLETED.
+  createdAt        DateTime        @default(now()) // starting time.
+  courseMaterial   CourseMaterials @relation(fields: [courseMaterialId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  courseMaterialId String
+  courseUser       CourseUsers     @relation(fields: [courseUserId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  courseUserId     String
+
+  @@unique([courseUserId, courseMaterialId])
+  @@index([id])
+}
+
+model MostSearchedCourses {
+  id        String   @id @default(uuid())
+  counter   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  courseId  String
+  user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId    String
+
+  // if one user searched one course priviously, counter should be incremented, we don't need to create new row.
+  // So,the combination of userId and courseId is unique.
+  @@unique([userId, courseId])
+}
+
+model Announcement {
+  id             String                    @id @default(uuid())
+  title          String
+  body           String
+  readCounter    Int                       @default(0) // this counter will show how many people seen that post. And we may use it to display it is read or not.
+  target         String // For whom we wanna to send? eg. public, specific group, or specific user.
+  createdAt      DateTime                  @default(now())
+  updatedAt      DateTime                  @updatedAt
+  user           Users                     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade) // onDelete: SetNull, onUpdate: NoAction)
+  userId         String // if we delete the user who wrote this message, this announcement will be alive with userId NULL.
+  counterHistory AnnouncementReadHistory[]
+
+  @@index([id, title])
+}
+
+model AnnouncementReadHistory {
+  id             String       @id @default(uuid())
+  createdAt      DateTime     @default(now())
+  user           Users        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade) // onDelete: SetNull, onUpdate: NoAction)
+  userId         String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  announcementId String
+
+  @@unique([userId, announcementId])
+  @@index([id])
+}
+
+model Comment {
+  id             String               @id @default(uuid())
+  body           String
+  readCounter    Int                  @default(0)
+  status         String               @default("UNREAD") // status will be READ, UNREAD
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @default(now()) // updated at will be seted manualy. b/c its status shall be seted without updated at update.
+  course         Course               @relation(fields: [courseId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  courseId       String
+  user           Users                @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade) // onDelete: SetNull, onUpdate: NoAction)
+  userId         String
+  counterHistory CommentReadHistory[]
+
+  @@index([id])
+}
+
+model CommentReadHistory {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade) // onDelete: SetNull, onUpdate: NoAction)
+  userId    String
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  commentId String
+
+  @@unique([userId, commentId])
+  @@index([id])
+}

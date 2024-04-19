@@ -1,0 +1,41 @@
+node_modules
+npm-debug.log
+
+
+
+
+# # node_modules
+# # contains the compiled output of TypeScript or other source code while run time.
+# dist
+
+# #Ignore the git repository and cache folders
+# .git
+# .cache
+
+
+# # visual studio code configuration file.
+# .vscode
+
+# # code coverage report.
+# coverage
+
+# # secret file that is used while docker image creation.
+# .env
+
+# # contains application logs
+# *.log
+# logs/
+
+# # unit test files
+# *.test.ts
+# *.spec.ts
+
+# # created by Vim.
+# *.swp
+
+# #Ingore all markdown and class files
+# *.md
+# **/*.class
+# *.swo
+
+# # npm-debug.log

@@ -1,0 +1,44 @@
+version: "3.8"
+
+services:
+  frontend:
+    build:
+      ./client
+      # context: ./client
+      # dockerfile: Dockerfile.client
+    ports:
+      - "3000:3000"
+    networks:
+      - ie-networks
+
+  backend:
+    build: ./server
+    env_file:
+      - .env
+    environment:
+      DATABASE_URL: ${DOCKER_DATABASE_URL}
+    ports:
+      - "4444:4444"
+    networks:
+      - ie-networks
+    depends_on:
+      - database
+
+  database:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: ${DOCKER_POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DOCKER_POSTGRES_PASSWORD}
+      POSTGRES_DB: ${DOCKER_POSTGRES_DB}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - ie-networks
+
+volumes:
+  postgres-data:
+
+networks:
+  ie-networks:
